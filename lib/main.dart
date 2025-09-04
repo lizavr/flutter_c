@@ -109,7 +109,7 @@ class MainPage extends StatelessWidget {
             Icon(
               Icons.home,
               size: 100,
-              color: Colors.lightGreen.withOpacity(0.8),
+              color: Colors.lightGreen.withValues(alpha: 0.8),
             ),
             const SizedBox(height: 24),
             Text(
