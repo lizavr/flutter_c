@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:permission_handler/permission_handler.dart';
+
+import 'services/audio_recorder.dart';
+import 'services/chatgpt_client.dart';
 
 void main() {
   runApp(const MyApp());
@@ -48,6 +53,9 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  final _recorder = AudioRecorderService();
+  final _client = ChatGptClient();
+  bool _isRecording = false;
 
   final List<Widget> _pages = [
     const MainPage(),
@@ -79,19 +87,47 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Handle microphone button press
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Microphone pressed!'),
-              backgroundColor: Colors.lightGreen,
-            ),
-          );
-        },
+        onPressed: _onFabPressed,
         tooltip: 'Microphone',
-        child: const Icon(Icons.mic),
+        child: Icon(_isRecording ? Icons.stop : Icons.mic),
       ),
     );
+  }
+
+  Future<void> _onFabPressed() async {
+    if (_isRecording) {
+      final bytes = await _recorder.stop();
+      setState(() => _isRecording = false);
+      if (bytes != null) {
+        await _sendToChatGpt(bytes);
+      } else {
+        debugPrint('No audio captured');
+      }
+      return;
+    }
+
+    final granted = await Permission.microphone.request();
+    if (!granted.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Microphone permission denied.')),
+      );
+      return;
+    }
+    final ok = await _recorder.start();
+    if (ok) {
+      setState(() => _isRecording = true);
+    } else {
+      debugPrint('Failed to start recording');
+    }
+  }
+
+  Future<void> _sendToChatGpt(Uint8List bytes) async {
+    final text = await _client.sendAudioBytes(bytes);
+    if (text == null || text.trim().isEmpty) {
+      debugPrint('ChatGPT returned empty response');
+    } else {
+      debugPrint('ChatGPT: $text');
+    }
   }
 }
 
