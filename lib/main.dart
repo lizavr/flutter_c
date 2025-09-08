@@ -7,6 +7,7 @@ import 'services/chatgpt_client.dart';
 import 'pages/main_page.dart';
 import 'pages/expenses_page.dart';
 import 'pages/todo_list_page.dart';
+import 'services/todo_repository.dart';
 
 void main() {
   runApp(const MyApp());
@@ -89,11 +90,60 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onFabPressed,
-        tooltip: 'Microphone',
-        child: Icon(_isRecording ? Icons.stop : Icons.mic),
-      ),
+      floatingActionButton: _currentIndex == 2
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  heroTag: 'fab_add_task',
+                  onPressed: () async {
+                    final controller = TextEditingController();
+                    final title = await showDialog<String>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Add task'),
+                        content: TextField(
+                          controller: controller,
+                          autofocus: true,
+                          textInputAction: TextInputAction.done,
+                          decoration:
+                              const InputDecoration(hintText: 'Task title'),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () =>
+                                Navigator.of(ctx).pop(controller.text),
+                            child: const Text('Add'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (title != null && title.trim().isNotEmpty) {
+                      TodoRepository.instance.add(title.trim());
+                    }
+                  },
+                  tooltip: 'Add task',
+                  child: const Icon(Icons.edit),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton(
+                  heroTag: 'fab_mic_on_todo',
+                  onPressed: _onFabPressed,
+                  tooltip: 'Microphone',
+                  child: Icon(_isRecording ? Icons.stop : Icons.mic),
+                ),
+              ],
+            )
+          : FloatingActionButton(
+              onPressed: _onFabPressed,
+              tooltip: 'Microphone',
+              child: Icon(_isRecording ? Icons.stop : Icons.mic),
+            ),
     );
   }
 
@@ -130,6 +180,7 @@ class _MainScreenState extends State<MainScreen> {
       debugPrint('ChatGPT returned empty response');
     } else {
       debugPrint('ChatGPT: $text');
+      TodoRepository.instance.add(text.trim());
     }
   }
 }
