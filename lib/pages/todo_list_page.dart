@@ -39,25 +39,25 @@ class TodoListPage extends StatelessWidget {
                             direction: DismissDirection.endToStart,
                             background: Container(
                               alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              color: Colors.redAccent.withOpacity(0.6),
-                              child: const Icon(Icons.close, color: Colors.white),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              color: const Color.fromARGB(
+                                255,
+                                188,
+                                228,
+                                161,
+                              ).withValues(alpha: 0.6),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ),
                             ),
                             onDismissed: (_) {
                               TodoRepository.instance.removeAt(index);
                             },
-                            child: Stack(
-                              alignment: Alignment.centerRight,
-                              children: [
-                                _TodoTile(index: index, item: item),
-                                IconButton(
-                                  tooltip: 'Delete',
-                                  icon: const Icon(Icons.close, color: Colors.grey),
-                                  onPressed: () =>
-                                      TodoRepository.instance.removeAt(index),
-                                ),
-                              ],
-                            ),
+
+                            child: _TodoTile(index: index, item: item),
                           );
                         },
                       ),
@@ -113,7 +113,8 @@ class _TodoTile extends StatefulWidget {
   State<_TodoTile> createState() => _TodoTileState();
 }
 
-class _TodoTileState extends State<_TodoTile> with SingleTickerProviderStateMixin {
+class _TodoTileState extends State<_TodoTile>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 250),
@@ -159,6 +160,7 @@ class _TodoTileState extends State<_TodoTile> with SingleTickerProviderStateMixi
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
                 onTap: _toggle,
@@ -168,10 +170,7 @@ class _TodoTileState extends State<_TodoTile> with SingleTickerProviderStateMixi
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.lightGreen,
-                      width: 2,
-                    ),
+                    border: Border.all(color: Colors.lightGreen, width: 2),
                     color: widget.item.isDone
                         ? Colors.lightGreen
                         : Colors.transparent,
@@ -182,12 +181,14 @@ class _TodoTileState extends State<_TodoTile> with SingleTickerProviderStateMixi
                 ),
               ),
               const SizedBox(width: 12),
+
               Expanded(
                 child: Stack(
                   children: [
                     Text(
                       widget.item.title,
                       style: const TextStyle(color: Colors.white),
+                      softWrap: true,
                     ),
                     Positioned.fill(
                       child: IgnorePointer(
@@ -197,7 +198,7 @@ class _TodoTileState extends State<_TodoTile> with SingleTickerProviderStateMixi
                             return CustomPaint(
                               painter: _StrikeThroughPainter(
                                 progress: _controller.value,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withAlpha(204),
                               ),
                             );
                           },
@@ -205,6 +206,27 @@ class _TodoTileState extends State<_TodoTile> with SingleTickerProviderStateMixi
                       ),
                     ),
                   ],
+                ),
+              ),
+
+              IconButton(
+                tooltip: 'Delete',
+                icon: const Icon(Icons.close, color: Colors.grey),
+                onPressed: () => TodoRepository.instance.removeAt(widget.index),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((
+                    states,
+                  ) {
+                    if (states.contains(WidgetState.pressed)) {
+                      return Colors.grey.withValues(alpha: 0.4);
+                    }
+                    return null;
+                  }),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -223,6 +245,7 @@ class _StrikeThroughPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
     final paint = Paint()
       ..color = color
       ..strokeWidth = 2
@@ -237,4 +260,3 @@ class _StrikeThroughPainter extends CustomPainter {
   bool shouldRepaint(covariant _StrikeThroughPainter oldDelegate) =>
       oldDelegate.progress != progress || oldDelegate.color != color;
 }
-
