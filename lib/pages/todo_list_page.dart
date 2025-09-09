@@ -65,39 +65,6 @@ class TodoListPage extends StatelessWidget {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          heroTag: 'fab_add_todo',
-          onPressed: () async {
-            final controller = TextEditingController();
-            final title = await showDialog<String>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('Add task'),
-                content: TextField(
-                  controller: controller,
-                  autofocus: true,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(hintText: 'Task title'),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(controller.text),
-                    child: const Text('Add'),
-                  ),
-                ],
-              ),
-            );
-            if (title != null && title.trim().isNotEmpty) {
-              TodoRepository.instance.add(title.trim());
-            }
-          },
-          tooltip: 'Add task',
-          child: const Icon(Icons.edit),
-        ),
       ),
     );
   }

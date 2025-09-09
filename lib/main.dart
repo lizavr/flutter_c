@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:go_router/go_router.dart';
 
 import 'services/audio_recorder.dart';
 import 'services/chatgpt_client.dart';
@@ -18,7 +19,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final router = _buildRouter();
+
+    return MaterialApp.router(
       title: 'Expenses & Todo App',
       theme: ThemeData(
         useMaterial3: true,
@@ -43,40 +46,82 @@ class MyApp extends StatelessWidget {
           foregroundColor: Colors.black,
         ),
       ),
-      home: const MainScreen(),
+      routerConfig: router,
     );
   }
 }
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
+GoRouter _buildRouter() {
+  return GoRouter(
+    initialLocation: '/main',
+    routes: [
+      ShellRoute(
+        builder: (context, state, child) => _ShellScaffold(child: child),
+        routes: [
+          GoRoute(
+            path: '/main',
+            name: 'main',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: MainPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/expenses',
+            name: 'expenses',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ExpensesPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/todos',
+            name: 'todos',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: TodoListPage(),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _ShellScaffold extends StatefulWidget {
+  const _ShellScaffold({required this.child});
+  final Widget child;
+
+  @override
+  State<_ShellScaffold> createState() => _ShellScaffoldState();
+}
+
+class _ShellScaffoldState extends State<_ShellScaffold> {
   int _currentIndex = 0;
   final _recorder = AudioRecorderService();
   final _client = ChatGptClient();
   bool _isRecording = false;
 
-  final List<Widget> _pages = [
-    const MainPage(),
-    const ExpensesPage(),
-    const TodoListPage(),
-  ];
+  static const _tabs = ['/main', '/expenses', '/todos'];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final location = GoRouterState.of(context).uri.toString();
+      final idx = _tabs.indexOf(location);
+      if (idx != -1 && idx != _currentIndex) {
+        setState(() => _currentIndex = idx);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: widget.child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          setState(() => _currentIndex = index);
+          context.go(_tabs[index]);
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Main'),
